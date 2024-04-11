@@ -9,8 +9,35 @@ function Square({ value, onSquareClick }) {
   )
 }
 
+function Board({ squares, handleClick }) {
+  const renderSquare = (i) => (
+    <Square key={i} value={squares[i]} onSquareClick={() => handleClick(i)} />
+  )
 
-export default function Board() {
+  const rows = []
+  const boardSize = 3
+
+  for (let rowIndex = 0; rowIndex < boardSize; rowIndex++) {
+    const rowSquares = []
+    const rowStart = rowIndex * boardSize
+
+    for (let colIndex = 0; colIndex < boardSize; colIndex++) {
+      const squareIndex = rowStart + colIndex
+      rowSquares.push(renderSquare(squareIndex))
+    }
+
+    rows.push(
+      <div key={rowIndex} className="board-row">
+        {rowSquares}
+      </div>
+    )
+  }
+
+  return <div>{rows}</div>
+}
+
+
+export default function Game() {
   const [xIsNext, setXIsNext] = useState(true)
   const [squares, setSquares] = useState(Array(9).fill(null))
 
@@ -36,21 +63,7 @@ export default function Board() {
   return (
     <>
       <div className="status">{status}</div>
-      <div className="board-row">
-        <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
-        <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
-        <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
-      </div>
-      <div className="board-row">
-        <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
-        <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
-        <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
-      </div>
-      <div className="board-row">
-        <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
-        <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
-        <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
-      </div>
+      <Board squares={squares} handleClick={handleClick} />
     </>
   )
 }
