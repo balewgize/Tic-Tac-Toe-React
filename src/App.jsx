@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 function Square({ value, highlight, onSquareClick }) {
 
@@ -59,11 +59,20 @@ export default function Game() {
   const isDraw = !winner && !squares.includes(null)
 
 
+  useEffect(() => {
+    if (!xIsNext && !winner) {
+      setTimeout(() => {
+        makeComputerMove()
+      }, 500)
+    }
+  }, [xIsNext, winner])
+
+
   function handleClick(index) {
     if (squares[index] || checkWinner(squares)) return
 
     const nextSquares = squares.slice()
-    nextSquares[index] = xIsNext ? 'X' : 'O'
+    nextSquares[index] = 'X'
     setSquares(nextSquares)
     setXIsNext(!xIsNext)
   }
@@ -71,6 +80,25 @@ export default function Game() {
   function resetGame() {
     setSquares(Array(9).fill(null))
     setXIsNext(true)
+  }
+
+  function makeComputerMove() {
+    // Clone the current state to avoid direct mutation
+    const nextSquares = squares.slice()
+
+    // Determine which squares are available (i.e., have null values)
+    const availableSquareIndices = nextSquares
+      .map((square, index) => square === null ? index : null)
+      .filter(index => index !== null)
+
+    // Select a random index from the available squares
+    const randomIndex = Math.floor(Math.random() * availableSquareIndices.length)
+    const randomSquareIndex = availableSquareIndices[randomIndex]
+
+    // Make the computer's move by updating the state
+    nextSquares[randomSquareIndex] = 'O'
+    setSquares(nextSquares)
+    setXIsNext(!xIsNext)
   }
 
   function getStatus() {
