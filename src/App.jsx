@@ -39,10 +39,18 @@ export default function Game() {
 
   function makeComputerMove() {
     const nextSquares = squares.slice()
-    let chosenSquare = findBlockingMove(nextSquares, winPatterns)
+    let chosenSquare = null
 
-    if (chosenSquare === null) {
-      // If no blocking move is found, proceed with the random selection
+    let blockingSquare = findBlockingMove(nextSquares, winPatterns)
+    let winningSquare = findWinningMove(nextSquares, winPatterns)
+
+    if (winningSquare !== null) {
+      // Check if there's a winning move available first
+      chosenSquare = winningSquare
+    } else if (blockingSquare !== null) {
+      chosenSquare = blockingSquare
+    } else {
+      // If no blocking or winning move is found, proceed with the random selection
       const availableSquareIndices = nextSquares
         .map((square, index) => square === null ? index : null)
         .filter(index => index !== null)
@@ -101,18 +109,27 @@ function checkWinner(squares, winPatterns) {
 }
 
 function findBlockingMove(squares, winPatterns) {
+  // 'X' is the player symbol to block
+  return findStrategicMove(squares, winPatterns, 'X');
+}
 
+function findWinningMove(squares, winPatterns) {
+  // 'O' is the computer symbol to win
+  return findStrategicMove(squares, winPatterns, 'O');
+}
+
+function findStrategicMove(squares, winPatterns, playerSymbol) {
   for (let pattern of winPatterns) {
     const [a, b, c] = pattern
 
-    if (squares[a] === 'X' && squares[b] === 'X' && squares[c] === null) {
-      return c // Return the index to block
-    } else if (squares[a] === 'X' && squares[c] === 'X' && squares[b] === null) {
+    if (squares[a] === playerSymbol && squares[b] === playerSymbol && squares[c] === null) {
+      return c // Return the index for the strategic move
+    } else if (squares[a] === playerSymbol && squares[c] === playerSymbol && squares[b] === null) {
       return b
-    } else if (squares[b] === 'X' && squares[c] === 'X' && squares[a] === null) {
+    } else if (squares[b] === playerSymbol && squares[c] === playerSymbol && squares[a] === null) {
       return a
     }
   }
 
-  return null // No blocking move found
+  return null; // No strategic move found
 }
