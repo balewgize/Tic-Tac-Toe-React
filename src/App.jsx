@@ -1,75 +1,30 @@
 import { useState, useEffect } from "react"
-
-function Square({ value, highlight, onSquareClick }) {
-
-  return (
-    <button
-      className={`square ${highlight ? "winning-square" : ""}`}
-      onClick={onSquareClick}
-    >
-      {value}
-    </button>
-  )
-}
-
-function Board({ squares, handleClick }) {
-  const winnerLine = checkWinner(squares)
-
-  const renderSquare = (i) => {
-    const highlight = winnerLine && winnerLine.includes(i)
-
-    return (
-      <Square
-        key={i}
-        value={squares[i]}
-        highlight={highlight}
-        onSquareClick={() => handleClick(i)}
-      />
-    )
-  }
-
-  const rows = []
-  const boardSize = 3
-
-  for (let rowIndex = 0; rowIndex < boardSize; rowIndex++) {
-    const rowSquares = []
-    const rowStart = rowIndex * boardSize
-
-    for (let colIndex = 0; colIndex < boardSize; colIndex++) {
-      const squareIndex = rowStart + colIndex
-      rowSquares.push(renderSquare(squareIndex))
-    }
-
-    rows.push(
-      <div key={rowIndex} className="board-row">
-        {rowSquares}
-      </div>
-    )
-  }
-
-  return <div>{rows}</div>
-}
+import Board from "./Board.jsx"
 
 
 export default function Game() {
   const [xIsNext, setXIsNext] = useState(true)
   const [squares, setSquares] = useState(Array(9).fill(null))
 
-  const winner = checkWinner(squares)
+  const winPatterns = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+    [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+    [0, 4, 8], [2, 4, 6]            // Diagonals
+  ]
+
+  const winner = checkWinner(squares, winPatterns)
   const isDraw = !winner && !squares.includes(null)
 
 
   useEffect(() => {
     if (!xIsNext && !winner) {
-      setTimeout(() => {
-        makeComputerMove()
-      }, 500)
+      setTimeout(() => makeComputerMove(), 500)
     }
   }, [xIsNext, winner])
 
 
   function handleClick(index) {
-    if (squares[index] || checkWinner(squares)) return
+    if (squares[index] || checkWinner(squares, winPatterns)) return
 
     const nextSquares = squares.slice()
     nextSquares[index] = 'X'
@@ -83,23 +38,24 @@ export default function Game() {
   }
 
   function makeComputerMove() {
-    // Clone the current state to avoid direct mutation
     const nextSquares = squares.slice()
+    let chosenSquare = findBlockingMove(nextSquares, winPatterns)
 
-    // Determine which squares are available (i.e., have null values)
-    const availableSquareIndices = nextSquares
-      .map((square, index) => square === null ? index : null)
-      .filter(index => index !== null)
+    if (chosenSquare === null) {
+      // If no blocking move is found, proceed with the random selection
+      const availableSquareIndices = nextSquares
+        .map((square, index) => square === null ? index : null)
+        .filter(index => index !== null)
 
-    // Select a random index from the available squares
-    const randomIndex = Math.floor(Math.random() * availableSquareIndices.length)
-    const randomSquareIndex = availableSquareIndices[randomIndex]
+      const randomIndex = Math.floor(Math.random() * availableSquareIndices.length)
+      chosenSquare = availableSquareIndices[randomIndex]
+    }
 
-    // Make the computer's move by updating the state
-    nextSquares[randomSquareIndex] = 'O'
+    nextSquares[chosenSquare] = 'O'
     setSquares(nextSquares)
     setXIsNext(!xIsNext)
   }
+
 
   function getStatus() {
     let status = ""
@@ -116,7 +72,12 @@ export default function Game() {
   return (
     <div className="game">
       <div className="status">{getStatus()}</div>
-      <Board squares={squares} handleClick={handleClick} />
+      <Board
+        squares={squares}
+        winPatterns={winPatterns}
+        checkWinner={checkWinner}
+        handleClick={handleClick}
+      />
 
       {(winner || isDraw) && (
         <button className="reset-btn" onClick={resetGame}>
@@ -127,22 +88,31 @@ export default function Game() {
   )
 }
 
-function checkWinner(squares) {
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6]
-  ]
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
+function checkWinner(squares, winPatterns) {
+
+  for (let pattern of winPatterns) {
+    const [a, b, c] = pattern
+
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return lines[i]
+      return pattern
     }
   }
   return null
+}
+
+function findBlockingMove(squares, winPatterns) {
+
+  for (let pattern of winPatterns) {
+    const [a, b, c] = pattern
+
+    if (squares[a] === 'X' && squares[b] === 'X' && squares[c] === null) {
+      return c // Return the index to block
+    } else if (squares[a] === 'X' && squares[c] === 'X' && squares[b] === null) {
+      return b
+    } else if (squares[b] === 'X' && squares[c] === 'X' && squares[a] === null) {
+      return a
+    }
+  }
+
+  return null // No blocking move found
 }
