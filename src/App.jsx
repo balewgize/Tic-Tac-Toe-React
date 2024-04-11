@@ -1,18 +1,32 @@
 import { useState } from "react"
 
-function Square({ value, onSquareClick }) {
+function Square({ value, highlight, onSquareClick }) {
 
   return (
-    <button className="square" onClick={onSquareClick}>
+    <button
+      className={`square ${highlight ? "winning-square" : ""}`}
+      onClick={onSquareClick}
+    >
       {value}
     </button>
   )
 }
 
 function Board({ squares, handleClick }) {
-  const renderSquare = (i) => (
-    <Square key={i} value={squares[i]} onSquareClick={() => handleClick(i)} />
-  )
+  const winnerLine = checkWinner(squares)
+
+  const renderSquare = (i) => {
+    const highlight = winnerLine && winnerLine.includes(i)
+
+    return (
+      <Square
+        key={i}
+        value={squares[i]}
+        highlight={highlight}
+        onSquareClick={() => handleClick(i)}
+      />
+    )
+  }
 
   const rows = []
   const boardSize = 3
@@ -41,8 +55,12 @@ export default function Game() {
   const [xIsNext, setXIsNext] = useState(true)
   const [squares, setSquares] = useState(Array(9).fill(null))
 
+  const winner = checkWinner(squares)
+  const isDraw = !winner && !squares.includes(null)
+
+
   function handleClick(index) {
-    if (squares[index] || calculateWinner(squares)) return
+    if (squares[index] || checkWinner(squares)) return
 
     const nextSquares = squares.slice()
     nextSquares[index] = xIsNext ? 'X' : 'O'
@@ -50,25 +68,38 @@ export default function Game() {
     setXIsNext(!xIsNext)
   }
 
-  const winner = calculateWinner(squares);
-  let status
-  if (winner) {
-    status = "Winner: " + winner
-  } else if (!squares.includes(null)) {
-    status = "It is a tie!"
-  } else {
-    status = `Next player: ${xIsNext ? "X" : "O"}`
+  function resetGame() {
+    setSquares(Array(9).fill(null))
+    setXIsNext(true)
+  }
+
+  function getStatus() {
+    let status = ""
+    if (winner) {
+      status = "Winner: " + squares[winner[0]]
+    } else if (isDraw) {
+      status = <strong>Draw!</strong>
+    } else {
+      status = `Next player: ${xIsNext ? "X" : "O"}`
+    }
+    return status
   }
 
   return (
-    <>
-      <div className="status">{status}</div>
+    <div className="game">
+      <div className="status">{getStatus()}</div>
       <Board squares={squares} handleClick={handleClick} />
-    </>
+
+      {(winner || isDraw) && (
+        <button className="reset-btn" onClick={resetGame}>
+          New Game
+        </button>
+      )}
+    </div>
   )
 }
 
-function calculateWinner(squares) {
+function checkWinner(squares) {
   const lines = [
     [0, 1, 2],
     [3, 4, 5],
@@ -82,7 +113,7 @@ function calculateWinner(squares) {
   for (let i = 0; i < lines.length; i++) {
     const [a, b, c] = lines[i];
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a]
+      return lines[i]
     }
   }
   return null
